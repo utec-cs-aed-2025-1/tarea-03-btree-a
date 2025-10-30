@@ -15,7 +15,31 @@ class BTree {
  public:
   BTree(int _M) : root(nullptr), M(_M) {}
 
-  bool search(TK key);//indica si se encuentra o no un elemento
+  bool search(TK key){
+      Node<TK>* current = this->root;
+
+      if (current == nullptr)
+      {
+        return false;
+      }
+
+      while (current != nullptr){
+        int i = 0;
+        while (i < current->count && current->keys[i] < key){
+          i++;
+        }
+
+        if (i < current->count && current->keys[i] == key){
+          return true;
+        }
+
+        if (current->leaf){
+          return false;
+        }
+        current = current->children[i];
+      }
+      return false;      
+  };
   void insert(TK key);//inserta un elemento
   void remove(TK key);//elimina un elemento
   int height();//altura del arbol. Considerar altura 0 para arbol vacio
