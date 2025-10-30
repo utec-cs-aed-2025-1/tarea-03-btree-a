@@ -22,9 +22,27 @@ struct Node {
     leaf = true;
   }
 
-  void killSelf() {
-    // TODO
-  }
+  void killSelf(int M) {
+    // Liberar recursivamente hijos
+    if (children != nullptr) {
+        for (int i = 0; i < M; ++i) {
+            if (children[i] != nullptr) {
+                children[i]->killSelf(M);
+                delete children[i];
+                children[i] = nullptr;
+            }
+        }
+        delete[] children;
+        children = nullptr;
+    }
+    // Liberar claves
+    if (keys != nullptr) {
+        delete[] keys;
+        keys = nullptr;
+    }
+    count = 0;
+    leaf = true;
+}
 };
 
 #endif
