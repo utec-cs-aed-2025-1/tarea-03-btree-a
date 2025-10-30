@@ -124,7 +124,23 @@ class BTree {
   };
   
   void remove(TK key);  //elimina un elemento
-  int height();  //altura del arbol. Considerar altura 0 para arbol vacio
+  
+  //altura del arbol. Considerar altura 0 para arbol vacio
+  int height(){
+    if (this->root == nullptr){
+      return 0;
+    }
+    int h = 1;
+    Node<TK>* Act = this->root;
+    while (!Act->leaf){
+      if(Act->children[0] == nullptr){
+        break;
+      }
+      Act = Act->children[0];
+      h++;
+    }
+    return h;
+  };
   string toString(const string& sep);  // recorrido inorder
   vector<TK> rangeSearch(TK begin, TK end);
 
@@ -145,7 +161,14 @@ class BTree {
     return Act->keys[Act->count-1];
   };
   // eliminar todos lo elementos del arbol
-  void clear();
+  void clear() {
+    if (this->root != nullptr) {
+        this->root->killSelf(this->M);
+        delete this->root;
+        this->root = nullptr;
+    }
+    this->n = 0;
+  }
   // retorna el total de elementos insertados
   int size(){
     return n;
@@ -155,7 +178,7 @@ class BTree {
   static BTree* build_from_ordered_vector(vector<T> elements);
   // Verifique las propiedades de un árbol B
   bool check_properties(){
-      
+
   };
 
   ~BTree();     // liberar memoria
