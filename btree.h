@@ -42,7 +42,7 @@ class BTree {
 
   void split(Node<TK>* p, int h){
     Node<TK>* Hlleno = p->children[h];
-    Node<TK>* Vnuevo = new Node(this->M);
+    Node<TK>* Vnuevo = new Node<TK>(this->M);
     Vnuevo->leaf = Hlleno->leaf;
 
     int mid = (M-1)/2;
