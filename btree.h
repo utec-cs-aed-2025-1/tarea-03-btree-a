@@ -144,7 +144,7 @@ class BTree {
     return current->keys[0];
   }
 
-  //funcion merge 
+  //funcion merge (Funcion auxiliar y recursiva)
    void merge(Node<TK>* parent, int idx) {
     Node<TK>* child = parent->children[idx];
     Node<TK>* sibling = parent->children[idx + 1];
@@ -166,7 +166,6 @@ class BTree {
 
     child->count += sibling->count + 1;
 
-    // Eliminar la clave del padre
     for (int i = idx; i < parent->count - 1; i++) {
       parent->keys[i] = parent->keys[i + 1];
     }
