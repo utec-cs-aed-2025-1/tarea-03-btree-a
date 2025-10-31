@@ -45,7 +45,7 @@ class BTree {
     Node<TK>* Vnuevo = new Node<TK>(this->M);
     Vnuevo->leaf = Hlleno->leaf;
 
-    int mid = (M-1)/2;
+    int mid = (M-1)/ 2;
     TK Medio = Hlleno->keys[mid];
     int j = 0;
     for (int i = mid + 1; i < Hlleno->count; i++)
