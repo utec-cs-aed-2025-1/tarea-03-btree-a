@@ -1,6 +1,9 @@
 #ifndef BTree_H
 #define BTree_H
 #include <iostream>
+#include <vector>
+#include <string>
+#include <functional>
 #include "node.h"
 
 using namespace std;
@@ -175,13 +178,71 @@ class BTree {
   };  
   
   // Construya un árbol B a partir de un vector de elementos ordenados
-  static BTree* build_from_ordered_vector(vector<T> elements);
+  static BTree<TK>* build_from_ordered_vector(const vector<TK>& elements, int M) {
+    BTree<TK>* tree = new BTree<TK>(M);
+    for (const auto& e : elements) {
+      tree->insert(e);
+    }
+    return tree;
+  }
   // Verifique las propiedades de un árbol B
   bool check_properties(){
+    // Árbol vacío es válido
+    if (this->root == nullptr) return true;
 
+    int t = (this->M + 1) / 2;
+    int maxKeys = this->M - 1;
+    int expectedLeafDepth = -1;
+
+    function<bool(Node<TK>*, int, bool, TK, bool, TK)> check =
+      [&](Node<TK>* node, int depth, bool hasMin, TK minV, bool hasMax, TK maxV) -> bool {
+        if (node == nullptr) return false;
+
+        //Rango de cantidad de claves
+        if (node == this->root) {
+          if (node->count < 1 || node->count > maxKeys) return false;
+        } else {
+          int minKeys = t - 1; // mínimo en nodos no-raíz
+          if (node->count < minKeys || node->count > maxKeys) return false;
+        }
+
+        //Claves ordenadas y dentro de límites [minV, maxV)
+        for (int i = 0; i < node->count; ++i) {
+          if (i > 0 && !(node->keys[i-1] < node->keys[i])) return false;
+          if (hasMin && !(minV < node->keys[i])) return false;
+          if (hasMax && !(node->keys[i] < maxV)) return false;
+        }
+
+        if (node->leaf) {
+          //Todas las hojas a la misma profundidad
+          if (expectedLeafDepth == -1) expectedLeafDepth = depth;
+          return expectedLeafDepth == depth;
+        }
+
+        //Nodos internos deben tener count+1 hijos no nulos en [0..count]
+        for (int i = 0; i <= node->count; ++i) {
+          if (node->children[i] == nullptr) return false;
+        }
+
+        //Recorrer hijos con límites apropiados
+        // hijo 0
+        if (!check(node->children[0], depth + 1, hasMin, minV, true, node->keys[0])) return false;
+        // hijos intermedios
+        for (int i = 1; i < node->count; ++i) {
+          if (!check(node->children[i], depth + 1, true, node->keys[i-1], true, node->keys[i])) return false;
+        }
+        // hijo final
+        if (!check(node->children[node->count], depth + 1, true, node->keys[node->count - 1], hasMax, maxV)) return false;
+
+        return true;
+      };
+
+    return check(this->root, /*depth*/0, /*hasMin*/false, TK{}, /*hasMax*/false, TK{});
   };
 
-  ~BTree();     // liberar memoria
+  ~BTree(){
+    clear();
+  }     // liberar memoria
 };
 
 #endif
