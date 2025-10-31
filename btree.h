@@ -442,7 +442,7 @@ class BTree {
     return n;
   };  
   
-  // Construya un árbol B a partir de un vector de elementos ordenados
+  // Construya un árbol B a partir de un vector de elementos ordenados.
   static BTree<TK>* build_from_ordered_vector(const vector<TK>& elements, int M) {
     BTree<TK>* tree = new BTree<TK>(M);
     for (const auto& e : elements) {
