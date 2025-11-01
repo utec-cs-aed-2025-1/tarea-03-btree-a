@@ -42,89 +42,88 @@ public:
         return false;
     };
 
-void insert(TK key) {
-
-    if (root == nullptr) {
-        root = new Node<TK>(M);
-        root->keys[0] = key;
-        root->count = 1;
-        return;
-    }
-    //por si el btree no tiene ningun elemento, esto crea uno nuevo
-
-    stack<Node<TK>*> s;
-    Node<TK>* curr = root;
-    s.push(curr);
-
-    while (!curr->leaf) {
-        int i;
-        for (i = 0; i < curr->count; ++i) {
-            if (curr->keys[i] > key) break;
+    void insert(TK key) {
+        if (root == nullptr) {
+            root = new Node<TK>(M);
+            root->keys[0] = key;
+            root->count = 1;
+            return;
         }
-        curr = curr->children[i];
+        //por si el btree no tiene ningun elemento, esto crea uno nuevo
+
+        stack<Node<TK> *> s;
+        Node<TK> *curr = root;
         s.push(curr);
-    }
-    //recorro el arbol hasta encontrar el que busco, a su vez lo guardo en la pila
 
-    bool inserted = false;
-    while (!inserted) {
-        curr->insert(key);
-
-        if (curr->count < M - 1) {
-            inserted = true;
-        } else {
-            // Split
-            int mid = (curr->count - 1) / 2;
-            //toma el anterior al de la mitad, sirve tanto para pares e impares
-            TK middleKey = curr->keys[mid];
-            Node<TK>* newNode = new Node<TK>(M);
-            newNode->leaf = curr->leaf;
-
-
-            for (int i = mid + 1, j = 0; i < curr->count; ++i, ++j) {
-                newNode->keys[j] = curr->keys[i];
-                newNode->count++;
+        while (!curr->leaf) {
+            int i;
+            for (i = 0; i < curr->count; ++i) {
+                if (curr->keys[i] > key) break;
             }
-            // copiamos la mitad derecha
+            curr = curr->children[i];
+            s.push(curr);
+        }
+        //recorro el arbol hasta encontrar el que busco, a su vez lo guardo en la pila
 
-            if (!curr->leaf) {
-                for (int i = mid + 1, j = 0; i <= curr->count; ++i, ++j) {
-                    newNode->children[j] = curr->children[i];
-                }
-            }
-            //se copian los hijos
+        bool inserted = false;
+        while (!inserted) {
+            curr->insert(key);
 
-            curr->count = mid;
-            s.pop();
-
-            if (s.empty()) {
-                Node<TK>* newRoot = new Node<TK>(M);
-                newRoot->keys[0] = middleKey;
-                newRoot->children[0] = curr;
-                newRoot->children[1] = newNode;
-                newRoot->count = 1;
-                newRoot->leaf = false;
-                root = newRoot;
+            if (curr->count < M - 1) {
                 inserted = true;
             } else {
-                Node<TK>* parent = s.top();
+                // Split
+                int mid = (curr->count - 1) / 2;
+                //toma el anterior al de la mitad, sirve tanto para pares e impares
+                TK middleKey = curr->keys[mid];
+                Node<TK> *newNode = new Node<TK>(M);
+                newNode->leaf = curr->leaf;
 
-                int i;
-                for (i = parent->count - 1; i >= 0 && parent->keys[i] > middleKey; --i) {
-                    parent->keys[i + 1] = parent->keys[i];
-                    parent->children[i + 2] = parent->children[i + 1];
+
+                for (int i = mid + 1, j = 0; i < curr->count; ++i, ++j) {
+                    newNode->keys[j] = curr->keys[i];
+                    newNode->count++;
                 }
+                // copiamos la mitad derecha
 
-                parent->keys[i + 1] = middleKey;
-                parent->children[i + 2] = newNode;
-                parent->count++;
+                if (!curr->leaf) {
+                    for (int i = mid + 1, j = 0; i <= curr->count; ++i, ++j) {
+                        newNode->children[j] = curr->children[i];
+                    }
+                }
+                //se copian los hijos
 
-                curr = parent;
-                key = middleKey;
+                curr->count = mid;
+                s.pop();
+
+                if (s.empty()) {
+                    Node<TK> *newRoot = new Node<TK>(M);
+                    newRoot->keys[0] = middleKey;
+                    newRoot->children[0] = curr;
+                    newRoot->children[1] = newNode;
+                    newRoot->count = 1;
+                    newRoot->leaf = false;
+                    root = newRoot;
+                    inserted = true;
+                } else {
+                    Node<TK> *parent = s.top();
+
+                    int i;
+                    for (i = parent->count - 1; i >= 0 && parent->keys[i] > middleKey; --i) {
+                        parent->keys[i + 1] = parent->keys[i];
+                        parent->children[i + 2] = parent->children[i + 1];
+                    }
+
+                    parent->keys[i + 1] = middleKey;
+                    parent->children[i + 2] = newNode;
+                    parent->count++;
+
+                    curr = parent;
+                    key = middleKey;
+                }
             }
         }
     }
-}
 
 
     TK getPredecessor(Node<TK> *node, int idx) {
@@ -499,8 +498,9 @@ void insert(TK key) {
                 if (!check(node->children[i], depth + 1, true, node->keys[i - 1], true, node->keys[i])) return false;
             }
             // hijo final
-            if (!check(node->children[node->count], depth + 1, true, node->keys[node->count - 1], hasMax, maxV)) return
-                    false;
+            if (!check(node->children[node->count], depth + 1, true, node->keys[node->count - 1], hasMax, maxV))
+                return
+                        false;
 
             return true;
         };
