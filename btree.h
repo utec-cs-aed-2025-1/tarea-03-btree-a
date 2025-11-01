@@ -16,6 +16,97 @@ private:
     int M; // grado u orden del arbol
     int n; // total de elementos en el arbol
 
+    void split_child(Node<TK> *parent, int child_index) {
+        Node<TK> *full_child = parent->children[child_index];
+        Node<TK> *new_sibling = new Node<TK>(M);
+        new_sibling->leaf = full_child->leaf;
+        int mid_key_index = (M - 2) / 2;
+
+        // Claves que van al nuevo hermano
+        new_sibling->count = (M - 1) - (mid_key_index + 1);
+        for (int j = 0; j < new_sibling->count; j++) {
+            new_sibling->keys[j] = full_child->keys[j + mid_key_index + 1];
+        }
+
+        // Hijos que van al nuevo hermano
+        if (!full_child->leaf) {
+            for (int j = 0; j <= new_sibling->count; j++) {
+                new_sibling->children[j] = full_child->children[j + mid_key_index + 1];
+            }
+        }
+
+        // Actualizar la cuenta del hijo original
+        full_child->count = mid_key_index;
+
+        // Mover hijos en el padre para hacer espacio
+        for (int j = parent->count; j > child_index; j--) {
+            parent->children[j + 1] = parent->children[j];
+        }
+        parent->children[child_index + 1] = new_sibling;
+
+        // Mover claves en el padre y promover la clave media
+        for (int j = parent->count - 1; j >= child_index; j--) {
+            parent->keys[j + 1] = parent->keys[j];
+        }
+        parent->keys[child_index] = full_child->keys[mid_key_index];
+        parent->count++;
+    }
+
+    void insert_non_full(Node<TK> *node, TK key) {
+        int i = node->count - 1;
+        if (node->leaf) {
+            // Es hoja, insertar directamente (Node::insert)
+            while (i >= 0 && node->keys[i] > key) {
+                node->keys[i + 1] = node->keys[i];
+                i--;
+            }
+            node->keys[i + 1] = key;
+            node->count++;
+            this->n++;
+        } else {
+            // No es hoja, encontrar hijo
+            while (i >= 0 && node->keys[i] > key) {
+                i--;
+            }
+            i++;
+            // Si el hijo está lleno, dividirlo
+            if (node->children[i]->count == M - 1) {
+                split_child(node, i);
+                // Decidir a qué hijo bajar
+                if (key > node->keys[i]) {
+                    i++;
+                }
+            }
+            insert_non_full(node->children[i], key);
+        }
+    }
+
+    // Auxiliar recursivo para toString
+    void toString_internal(Node<TK>* node, string& result, const string &sep) {
+        if (node == nullptr) {
+            return;
+        }
+        int i;
+        for (i = 0; i < node->count; i++) {
+            // Recorrer hijo izquierdo
+            if (!node->leaf) {
+                toString_internal(node->children[i], result, sep);
+            }
+
+            // Procesar clave
+            if (!result.empty()) {
+                result += sep;
+            }
+            result += to_string(node->keys[i]);
+        }
+
+        // Recorrer último hijo (derecho)
+        if (!node->leaf) {
+            toString_internal(node->children[i], result, sep);
+        }
+    }
+
+
 public:
     BTree(int orden) : root(nullptr), M(orden), n(0) {
     }
@@ -42,87 +133,27 @@ public:
         return false;
     };
 
+    // --- FUNCIÓN INSERT REESCRITA ---
     void insert(TK key) {
         if (root == nullptr) {
             root = new Node<TK>(M);
             root->keys[0] = key;
             root->count = 1;
+            this->n = 1;
             return;
         }
-        //por si el btree no tiene ningun elemento, esto crea uno nuevo
 
-        stack<Node<TK> *> s;
-        Node<TK> *curr = root;
-        s.push(curr);
-
-        while (!curr->leaf) {
-            int i;
-            for (i = 0; i < curr->count; ++i) {
-                if (curr->keys[i] > key) break;
-            }
-            curr = curr->children[i];
-            s.push(curr);
+        // Si la raíz está llena, el árbol crece en altura
+        if (root->count == M - 1) {
+            Node<TK> *new_root = new Node<TK>(M);
+            new_root->leaf = false;
+            new_root->children[0] = root;
+            split_child(new_root, 0);
+            root = new_root;
         }
-        //recorro el arbol hasta encontrar el que busco, a su vez lo guardo en la pila
 
-        bool inserted = false;
-        while (!inserted) {
-            curr->insert(key);
-
-            if (curr->count < M - 1) {
-                inserted = true;
-            } else {
-                // Split
-                int mid = (curr->count - 1) / 2;
-                //toma el anterior al de la mitad, sirve tanto para pares e impares
-                TK middleKey = curr->keys[mid];
-                Node<TK> *newNode = new Node<TK>(M);
-                newNode->leaf = curr->leaf;
-
-
-                for (int i = mid + 1, j = 0; i < curr->count; ++i, ++j) {
-                    newNode->keys[j] = curr->keys[i];
-                    newNode->count++;
-                }
-                // copiamos la mitad derecha
-
-                if (!curr->leaf) {
-                    for (int i = mid + 1, j = 0; i <= curr->count; ++i, ++j) {
-                        newNode->children[j] = curr->children[i];
-                    }
-                }
-                //se copian los hijos
-
-                curr->count = mid;
-                s.pop();
-
-                if (s.empty()) {
-                    Node<TK> *newRoot = new Node<TK>(M);
-                    newRoot->keys[0] = middleKey;
-                    newRoot->children[0] = curr;
-                    newRoot->children[1] = newNode;
-                    newRoot->count = 1;
-                    newRoot->leaf = false;
-                    root = newRoot;
-                    inserted = true;
-                } else {
-                    Node<TK> *parent = s.top();
-
-                    int i;
-                    for (i = parent->count - 1; i >= 0 && parent->keys[i] > middleKey; --i) {
-                        parent->keys[i + 1] = parent->keys[i];
-                        parent->children[i + 2] = parent->children[i + 1];
-                    }
-
-                    parent->keys[i + 1] = middleKey;
-                    parent->children[i + 2] = newNode;
-                    parent->count++;
-
-                    curr = parent;
-                    key = middleKey;
-                }
-            }
-        }
+        // Insertar en el árbol (que ahora sabemos que no tiene la raíz llena)
+        insert_non_full(root, key);
     }
 
 
@@ -258,15 +289,16 @@ public:
             } else {
                 // Caso 1b: Es un nodo interno
                 TK keyToDelete = node->keys[i];
+                int min_keys = (M - 1) / 2; // Mínimo de claves
 
                 // Si el hijo izquierdo tiene suficientes claves
-                if (node->children[i]->count >= (M + 1) / 2) {
+                if (node->children[i]->count > min_keys) {
                     TK predecessor = getPredecessor(node, i);
                     node->keys[i] = predecessor;
                     removeFromNode(node->children[i], predecessor);
                 }
                 // Si el hijo derecho tiene suficientes claves
-                else if (node->children[i + 1]->count >= (M + 1) / 2) {
+                else if (node->children[i + 1]->count > min_keys) {
                     TK successor = getSuccessor(node, i);
                     node->keys[i] = successor;
                     removeFromNode(node->children[i + 1], successor);
@@ -280,17 +312,18 @@ public:
         }
         // Caso 2: La clave no está en este nodo, buscar en subárbol
         else if (!node->leaf) {
-            // Verificar si es el último hijo
-            bool isInSubtree = (i == node->count);
+
+            int min_keys = (M - 1) / 2; // Mínimo de claves
+            bool is_last_child = (i == node->count);
 
             // Si el hijo donde debería estar tiene pocas claves
-            if (node->children[i]->count < (M + 1) / 2) {
+            if (node->children[i]->count == min_keys) {
                 // Intentar tomar del hermano izquierdo
-                if (i != 0 && node->children[i - 1]->count >= (M + 1) / 2) {
+                if (i != 0 && node->children[i - 1]->count > min_keys) {
                     borrowFromLeft(node, i);
                 }
                 // Intentar tomar del hermano derecho
-                else if (i != node->count && node->children[i + 1]->count >= (M + 1) / 2) {
+                else if (i != node->count && node->children[i + 1]->count > min_keys) {
                     borrowFromRight(node, i);
                 }
                 // Fusionar con un hermano
@@ -299,17 +332,13 @@ public:
                         merge(node, i);
                     } else {
                         merge(node, i - 1);
-                        i--;
+                        i--; // Ajustar 'i' porque ahora descendemos al nodo [i-1]
                     }
                 }
             }
 
             // Descender al hijo apropiado
-            if (isInSubtree && i > node->count) {
-                removeFromNode(node->children[i - 1], key);
-            } else {
-                removeFromNode(node->children[i], key);
-            }
+            removeFromNode(node->children[i], key);
         }
     }
 
@@ -317,10 +346,13 @@ public:
     void remove(TK key) {
         if (this->root == nullptr) return;
 
+        bool key_found = search(key); // Verificar si la clave existe
+
         removeFromNode(this->root, key);
+
         if (this->root->count == 0) {
             Node<TK> *oldRoot = this->root;
-            if (!this->root->leaf && this->root->children[0] != nullptr) {
+            if (!this->root->leaf) {
                 this->root = this->root->children[0];
             } else {
                 this->root = nullptr;
@@ -328,7 +360,9 @@ public:
             delete oldRoot;
         }
 
-        this->n--;
+        if (key_found) {
+             this->n--;
+        }
     }
 
 
@@ -349,31 +383,10 @@ public:
         return h;
     };
 
-    // recorrido inorder
+    // recorrido inorder (REESCRITO)
     string toString(const string &sep) {
         string result = "";
-        vector<Node<TK> *> stack;
-        if (this->root != nullptr) stack.push_back(this->root);
-        while (!stack.empty()) {
-            Node<TK> *node = stack.back();
-            stack.pop_back();
-
-            if (node != nullptr) {
-                for (int i = 0; i < node->count; i++) {
-                    if (!node->leaf) {
-                        stack.push_back(node->children[i]);
-                    }
-                    if (!result.empty()) {
-                        result += sep;
-                    }
-                    result += to_string(node->keys[i]);
-                }
-                if (!node->leaf) {
-                    stack.push_back(node->children[node->count]);
-                }
-            }
-        }
-
+        toString_internal(this->root, result, sep);
         return result;
     }
 
@@ -384,26 +397,29 @@ public:
         function<void(Node<TK> *)> search = [&](Node<TK> *node) {
             if (node == nullptr) return;
 
-            for (int i = 0; i < node->count; i++) {
+            int i = 0;
+            // Encontrar la primera clave >= begin
+            while (i < node->count && node->keys[i] < begin) {
+                i++;
+            }
+
+            // Recorrer hijos y claves mientras sean <= end
+            while (i < node->count) {
                 if (!node->leaf) {
-                    if (node->keys[i] >= begin) {
-                        search(node->children[i]);
-                    }
+                    search(node->children[i]);
                 }
 
                 if (node->keys[i] >= begin && node->keys[i] <= end) {
                     result.push_back(node->keys[i]);
+                } else if (node->keys[i] > end) {
+                    break; // Salir si la clave ya es mayor que 'end'
                 }
-
-                if (node->keys[i] > end) {
-                    return;
-                }
+                i++;
             }
 
-            if (!node->leaf) {
-                if (node->keys[node->count - 1] <= end) {
-                    search(node->children[node->count]);
-                }
+            // Recorrer el último hijo si no hemos salido
+            if (!node->leaf && i == node->count) {
+                search(node->children[i]);
             }
         };
 
@@ -413,6 +429,7 @@ public:
 
     // minimo valor de la llave en el arbol
     TK minKey() {
+        if (this->root == nullptr) return TK{}; // Devolver valor por defecto si está vacío
         Node<TK> *Act = this->root;
         while (!Act->leaf) {
             Act = Act->children[0];
@@ -421,6 +438,7 @@ public:
     };
     // maximo valor de la llave en el arbol
     TK maxKey() {
+        if (this->root == nullptr) return TK{}; // Devolver valor por defecto si está vacío
         Node<TK> *Act = this->root;
         while (!Act->leaf) {
             Act = Act->children[Act->count];
@@ -456,7 +474,7 @@ public:
         // Árbol vacío es válido
         if (this->root == nullptr) return true;
 
-        int t = (this->M + 1) / 2;
+        int t = (M + 1) / 2;
         int maxKeys = this->M - 1;
         int expectedLeafDepth = -1;
 
@@ -468,7 +486,7 @@ public:
             if (node == this->root) {
                 if (node->count < 1 || node->count > maxKeys) return false;
             } else {
-                int minKeys = t - 1; // mínimo en nodos no-raíz
+                int minKeys = (M - 1) / 2; // Mínimo en nodos no-raíz
                 if (node->count < minKeys || node->count > maxKeys) return false;
             }
 

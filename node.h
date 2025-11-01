@@ -22,8 +22,13 @@ struct Node {
         children = new Node<TK> *[M];
         count = 0;
         leaf = true;
+
+        for (int i = 0; i < M; i++) {
+            children[i] = nullptr;
+        }
     }
 
+    // Esta función asume que el nodo NO está lleno
     void insert(TK key) {
         int i = count - 1;
         while (i >= 0 && keys[i] > key) {
