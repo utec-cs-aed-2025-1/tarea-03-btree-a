@@ -28,7 +28,6 @@ struct Node {
         }
     }
 
-    // Esta función asume que el nodo NO está lleno
     void insert(TK key) {
         int i = count - 1;
         while (i >= 0 && keys[i] > key) {
