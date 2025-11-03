@@ -18,12 +18,12 @@ struct Node {
     }
 
     Node(int M) {
-        keys = new TK[M];
-        children = new Node<TK>*[M+1];
+        keys = new TK[M + 1];
+        children = new Node<TK>*[M + 2];
         count = 0;
         leaf = true;
 
-        for (int i = 0; i < M; i++) {
+        for (int i = 0; i < M + 2; i++) {
             children[i] = nullptr;
         }
     }
@@ -40,7 +40,7 @@ struct Node {
 
     void killSelf(int M) {
         if (children != nullptr) {
-            for (int i = 0; i < M+1; ++i) {
+            for (int i = 0; i < M + 2; ++i) {
                 if (children[i] != nullptr) {
                     children[i]->killSelf(M);
                     delete children[i];
