@@ -12,3 +12,6 @@
   - **Tenga cuidado en usar códigos existentes.**
 
 NOT DELETE OR MODIFY  THE MAIN FILE. 
+
+
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/ac1058c3-c954-44e2-8fe6-1da2778a0fca" />
