@@ -394,12 +394,10 @@ public:
         if (this->root == nullptr) {
             return 0;
         }
-        int h = 1;
+        // Altura medida en aristas (niveles - 1)
+        int h = 0;
         Node<TK> *Act = this->root;
         while (!Act->leaf) {
-            if (Act->children[0] == nullptr) {
-                break;
-            }
             Act = Act->children[0];
             h++;
         }
