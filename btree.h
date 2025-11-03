@@ -333,20 +333,22 @@ public:
 
 
     int height() {
-        if (this->root == nullptr) {
+        if (root == nullptr)
             return 0;
-        }
-        int h = 1;
-        Node<TK> *Act = this->root;
-        while (!Act->leaf) {
-            if (Act->children[0] == nullptr) {
-                break;
-            }
-            Act = Act->children[0];
+
+        int h = 0;
+        Node<TK>* current = root;
+
+        while (!current->leaf) {
+            current = current->children[0];
             h++;
         }
+
         return h;
-    };
+    }
+
+
+
 
     string toString(const string& sep) {
         string result;

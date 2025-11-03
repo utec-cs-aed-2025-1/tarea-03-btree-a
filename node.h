@@ -18,8 +18,8 @@ struct Node {
     }
 
     Node(int M) {
-        keys = new TK[M + 1];
-        children = new Node<TK>*[M + 2];
+        keys = new TK[M];
+        children = new Node<TK>*[M+1];
         count = 0;
         leaf = true;
 
