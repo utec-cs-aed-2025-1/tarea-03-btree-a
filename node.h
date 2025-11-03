@@ -18,8 +18,8 @@ struct Node {
     }
 
     Node(int M) {
-        keys = new TK[M - 1];
-        children = new Node<TK> *[M];
+        keys = new TK[M];
+        children = new Node<TK>*[M+1];
         count = 0;
         leaf = true;
 
@@ -39,9 +39,8 @@ struct Node {
     }
 
     void killSelf(int M) {
-        // Liberar recursivamente hijos
         if (children != nullptr) {
-            for (int i = 0; i < M; ++i) {
+            for (int i = 0; i < M+1; ++i) {
                 if (children[i] != nullptr) {
                     children[i]->killSelf(M);
                     delete children[i];
@@ -51,11 +50,12 @@ struct Node {
             delete[] children;
             children = nullptr;
         }
-        // Liberar claves
+
         if (keys != nullptr) {
             delete[] keys;
             keys = nullptr;
         }
+
         count = 0;
         leaf = true;
     }
