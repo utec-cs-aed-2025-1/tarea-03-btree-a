@@ -42,9 +42,86 @@ public:
         return false;
     };
 
+    Node<TK> *splitNode(Node<TK> *curr, TK &middleKey, int M) {
+        int mid = (curr->count - 1) / 2;
+        middleKey = curr->keys[mid];
+
+        Node<TK> *newNode = new Node<TK>(M);
+        newNode->leaf = curr->leaf;
+
+
+        for (int i = mid + 1, j = 0; i < curr->count; ++i, ++j) {
+            newNode->keys[j] = curr->keys[i];
+            newNode->count++;
+        }
+        // se copia la mitad derecha
+
+
+        if (!curr->leaf) {
+            for (int i = mid + 1, j = 0; i <= curr->count; ++i, ++j)
+                newNode->children[j] = curr->children[i];
+        }
+        // se copia hijos si no es hoja
+
+
+        for (int i = mid; i < M; ++i) curr->keys[i] = TK();
+        // limpiar la mitad derecha del nodo actual
+        curr->count = mid;
+
+        cout << " - Clave media que sube: " << middleKey << endl;
+        cout << " - Nueva mitad derecha: ";
+        for (int i = 0; i < newNode->count; ++i) cout << newNode->keys[i] << " ";
+        cout << endl;
+
+        return newNode;
+    }
+
+
+    bool insertIntoParent(stack<Node<TK> *> &s, Node<TK> *curr, Node<TK> *newNode, TK middleKey, int M) {
+        if (s.empty()) {
+            Node<TK> *newRoot = new Node<TK>(M);
+            newRoot->keys[0] = middleKey;
+            newRoot->children[0] = curr;
+            newRoot->children[1] = newNode;
+            newRoot->count = 1;
+            newRoot->leaf = false;
+            cout << " - [NUEVA RAÍZ] Clave raíz: " << middleKey << endl;
+            root = newRoot;
+            return true;
+        }
+
+        Node<TK> *parent = s.top();
+        cout << " - Subiendo clave " << middleKey << " al padre con claves: ";
+        for (int i = 0; i < parent->count; ++i) cout << parent->keys[i] << " ";
+        cout << endl;
+
+        int i;
+        for (i = parent->count - 1; i >= 0 && parent->keys[i] > middleKey; --i) {
+            parent->keys[i + 1] = parent->keys[i];
+            parent->children[i + 2] = parent->children[i + 1];
+        }
+
+        parent->keys[i + 1] = middleKey;
+        parent->children[i + 2] = newNode;
+        parent->count++;
+
+        cout << " - Padre después de insertar " << middleKey << ": ";
+        for (int k = 0; k < parent->count; ++k) cout << parent->keys[k] << " ";
+        cout << "(" << parent->count << ")" << endl;
+
+        // Si el padre se llenó, seguimos hacia arriba
+        if (parent->count == M) {
+            s.pop();
+            TK newMiddle;
+            Node<TK> *next = splitNode(parent, newMiddle, M);
+            return insertIntoParent(s, parent, next, newMiddle, M);
+        }
+
+        return true;
+    }
+
     void insert(TK key) {
         if (search(key)) return;
-        //no se admiran duplicados con esto
 
         if (root == nullptr) {
             root = new Node<TK>(M);
@@ -54,17 +131,18 @@ public:
             cout << "[CREAR RAÍZ] Nueva raíz con clave " << key << endl;
             return;
         }
-        //por si el btree no tiene ningun elemento, esto crea uno nuevo
 
         stack<Node<TK> *> s;
         Node<TK> *curr = root;
         s.push(curr);
 
+
         while (!curr->leaf) {
             int i;
-            for (i = 0; i < curr->count; ++i) {
+            for (i = 0; i < curr->count; ++i)
                 if (curr->keys[i] > key) break;
-            }
+            // desendemos hasta hoja
+
             cout << "[BAJAR] Clave " << key << " baja por nodo con claves: ";
             for (int j = 0; j < curr->count; ++j) cout << curr->keys[j] << " ";
             cout << endl;
@@ -72,6 +150,7 @@ public:
             curr = curr->children[i];
             s.push(curr);
         }
+
 
         bool inserted = false;
         while (!inserted) {
@@ -88,81 +167,14 @@ public:
             if (curr->count < M) {
                 inserted = true;
             } else {
-                // SPLIT
                 cout << "\n>>> [SPLIT] Nodo lleno. Claves antes del split: ";
                 for (int i = 0; i < curr->count; ++i) cout << curr->keys[i] << " ";
                 cout << endl;
 
-
-                int mid = (curr->count - 1) / 2;
-                TK middleKey = curr->keys[mid];
-                Node<TK> *newNode = new Node<TK>(M);
-                newNode->leaf = curr->leaf;
-
-                // copiar la mitad derecha
-                for (int i = mid + 1, j = 0; i < curr->count; ++i, ++j) {
-                    newNode->keys[j] = curr->keys[i];
-                    newNode->count++;
-                }
-
-                // copiar hijos si no es hoja
-                if (!curr->leaf) {
-                    for (int i = mid + 1, j = 0; i <= curr->count; ++i, ++j) {
-                        newNode->children[j] = curr->children[i];
-                    }
-                }
-
-                cout << " - Clave media que sube: " << middleKey << endl;
-                cout << " - Nueva mitad derecha: ";
-                for (int i = 0; i < newNode->count; ++i) cout << newNode->keys[i] << " ";
-                cout << endl;
-
-
-                for (int i = mid; i < M; ++i) curr->keys[i] = TK();
-
-                curr->count = mid;
+                TK middleKey;
+                Node<TK> *newNode = splitNode(curr, middleKey, M);
                 s.pop();
-
-                // subimos la clave
-                if (s.empty()) {
-                    Node<TK> *newRoot = new Node<TK>(M);
-                    newRoot->keys[0] = middleKey;
-                    newRoot->children[0] = curr;
-                    newRoot->children[1] = newNode;
-                    newRoot->count = 1;
-                    newRoot->leaf = false;
-                    root = newRoot;
-                    cout << " - [NUEVA RAÍZ] Clave raíz: " << middleKey << endl;
-                    inserted = true;
-                } else {
-                    Node<TK> *parent = s.top();
-                    cout << " - Subiendo clave " << middleKey << " al padre con claves: ";
-                    for (int i = 0; i < parent->count; ++i) cout << parent->keys[i] << " ";
-                    cout << endl;
-
-                    int i;
-                    for (i = parent->count - 1; i >= 0 && parent->keys[i] > middleKey; --i) {
-                        parent->keys[i + 1] = parent->keys[i];
-                        parent->children[i + 2] = parent->children[i + 1];
-                    }
-
-                    parent->children[i + 1] = curr;
-
-                    parent->keys[i + 1] = middleKey;
-                    parent->children[i + 2] = newNode;
-
-
-                    if (parent->count < M) {
-                        inserted = true;
-                    } else {
-                        curr = parent;
-                        key = middleKey;
-                    }
-
-                    cout << " - Padre después de insertar " << middleKey << ": ";
-                    for (int k = 0; k < parent->count; ++k) cout << parent->keys[k] << " ";
-                    cout << endl;
-                }
+                inserted = insertIntoParent(s, curr, newNode, middleKey, M);
             }
         }
         n++;
